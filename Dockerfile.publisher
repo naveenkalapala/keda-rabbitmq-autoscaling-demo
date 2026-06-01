@@ -1,0 +1,10 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+RUN pip install --no-cache-dir pika
+
+COPY fake-orders-generator.py .
+
+ENTRYPOINT ["python", "fake-orders-generator.py"]
+CMD ["--count", "500"]

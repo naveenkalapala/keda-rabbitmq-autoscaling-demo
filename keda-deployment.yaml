@@ -1,0 +1,80 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: rabbitmq-connection
+  namespace: keda
+type: Opaque
+stringData:
+  host: amqp://guest:guest@rabbitmq:5672/
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fake-order
+  namespace: keda
+  labels:
+    app: fake-order
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fake-order
+  template:
+    metadata:
+      labels:
+        app: fake-order
+    spec:
+      containers:
+        - name: consumer
+          image: nkalapala24/fake-orders-consumer:latest
+          imagePullPolicy: Always
+          env:
+            - name: RABBITMQ_HOST
+              value: rabbitmq
+            - name: RABBITMQ_PORT
+              value: "5672"
+            - name: RABBITMQ_USER
+              value: guest
+            - name: RABBITMQ_PASSWORD
+              value: guest
+            - name: QUEUE_NAME
+              value: fake-orders
+            - name: PREFETCH_COUNT
+              value: "20"
+            - name: PROCESSING_TIME_MS
+              value: "750"
+---
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: fake-order-trigger-auth
+  namespace: keda
+spec:
+  secretTargetRef:
+    - parameter: host
+      name: rabbitmq-connection
+      key: host
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: fake-order
+  namespace: keda
+spec:
+  scaleTargetRef:
+    name: fake-order
+  pollingInterval: 15
+  cooldownPeriod: 120
+  idleReplicaCount: 0
+  minReplicaCount: 1
+  maxReplicaCount: 10
+  triggers:
+    - type: rabbitmq
+      authenticationRef:
+        name: fake-order-trigger-auth
+      metadata:
+        protocol: amqp
+        queueName: fake-orders
+        mode: QueueLength
+        value: "5"
+        activationValue: "1"
