@@ -303,6 +303,3 @@ kubectl delete namespace keda
 
 ---
 
-## License
-
-MIT
