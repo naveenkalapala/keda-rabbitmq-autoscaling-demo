@@ -1,0 +1,23 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: fake-order
+  namespace: keda
+spec:
+  scaleTargetRef:
+    name: fake-order
+  pollingInterval: 15
+  cooldownPeriod: 120
+  idleReplicaCount: 0
+  minReplicaCount: 1
+  maxReplicaCount: 10
+  triggers:
+    - type: rabbitmq
+      authenticationRef:
+        name: fake-order-trigger-auth
+      metadata:
+        protocol: amqp
+        queueName: fake-orders
+        mode: QueueLength
+        value: "5"
+        activationValue: "1"

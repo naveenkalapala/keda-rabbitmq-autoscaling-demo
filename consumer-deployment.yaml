@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fake-order
+  namespace: keda
+  labels:
+    app: fake-order
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fake-order
+  template:
+    metadata:
+      labels:
+        app: fake-order
+    spec:
+      containers:
+        - name: consumer
+          image: nkalapala24/fake-orders-consumer:latest
+          imagePullPolicy: Always
+          env:
+            - name: RABBITMQ_HOST
+              value: rabbitmq
+            - name: RABBITMQ_PORT
+              value: "5672"
+            - name: RABBITMQ_USER
+              value: guest
+            - name: RABBITMQ_PASSWORD
+              value: guest
+            - name: QUEUE_NAME
+              value: fake-orders
+            - name: PREFETCH_COUNT
+              value: "20"
+            - name: PROCESSING_TIME_MS
+              value: "750"
+

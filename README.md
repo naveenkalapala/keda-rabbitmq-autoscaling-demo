@@ -122,10 +122,13 @@ Wait for the pod to be ready:
 kubectl wait --for=condition=ready pod -l app=rabbitmq -n keda --timeout=60s
 ```
 
-### 3. Deploy Consumer + KEDA ScaledObject
+### 3. Deploy Secret + Consumer + KEDA Scaling
 
 ```bash
-kubectl apply -f keda-deployment.yaml
+kubectl apply -f rabbitmq-secret.yaml
+kubectl apply -f consumer-deployment.yaml
+kubectl apply -f trigger-auth.yaml
+kubectl apply -f scaled-object.yaml
 ```
 
 This creates:
@@ -179,7 +182,10 @@ Open http://localhost:15672 (login: `guest` / `guest`)
 .
 ├── README.md                    # This file
 ├── rabbitmq-deployment.yaml     # RabbitMQ Deployment + Service
-├── keda-deployment.yaml         # Consumer Deployment + Secret + TriggerAuth + ScaledObject
+├── rabbitmq-secret.yaml         # AMQP connection string Secret (used by KEDA)
+├── consumer-deployment.yaml     # Consumer Deployment
+├── trigger-auth.yaml            # KEDA TriggerAuthentication
+├── scaled-object.yaml           # KEDA ScaledObject (scaling rules)
 ├── publisher-job.yaml           # Kubernetes Job to generate load
 ├── fake-orders-generator.py     # Publisher script (publishes fake orders to RabbitMQ)
 ├── orders-consumer.py           # Consumer script (processes orders from RabbitMQ)
@@ -286,7 +292,10 @@ Pre-built images available on Docker Hub:
 
 ```bash
 kubectl delete -f publisher-job.yaml
-kubectl delete -f keda-deployment.yaml
+kubectl delete -f scaled-object.yaml
+kubectl delete -f trigger-auth.yaml
+kubectl delete -f consumer-deployment.yaml
+kubectl delete -f rabbitmq-secret.yaml
 kubectl delete -f rabbitmq-deployment.yaml
 helm uninstall keda -n keda
 kubectl delete namespace keda

@@ -1,0 +1,10 @@
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: fake-order-trigger-auth
+  namespace: keda
+spec:
+  secretTargetRef:
+    - parameter: host
+      name: rabbitmq-connection
+      key: host
