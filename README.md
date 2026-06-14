@@ -113,7 +113,7 @@ kubectl get pods -n keda
 ### 2. Deploy RabbitMQ
 
 ```bash
-kubectl apply -f rabbitmq-deployment.yaml
+kubectl apply -f k8s/rabbitmq-deployment.yaml
 ```
 
 Wait for the pod to be ready:
@@ -125,10 +125,10 @@ kubectl wait --for=condition=ready pod -l app=rabbitmq -n keda --timeout=60s
 ### 3. Deploy Secret + Consumer + KEDA Scaling
 
 ```bash
-kubectl apply -f rabbitmq-secret.yaml
-kubectl apply -f consumer-deployment.yaml
-kubectl apply -f trigger-auth.yaml
-kubectl apply -f scaled-object.yaml
+kubectl apply -f k8s/rabbitmq-secret.yaml
+kubectl apply -f k8s/consumer-deployment.yaml
+kubectl apply -f k8s/trigger-auth.yaml
+kubectl apply -f k8s/scaled-object.yaml
 ```
 
 This creates:
@@ -140,14 +140,14 @@ This creates:
 ### 4. Generate Load
 
 ```bash
-kubectl apply -f publisher-job.yaml
+kubectl apply -f k8s/publisher-job.yaml
 ```
 
 Or run with a custom count:
 
 ```bash
 kubectl delete job fake-orders-publisher -n keda --ignore-not-found
-kubectl apply -f publisher-job.yaml
+kubectl apply -f k8s/publisher-job.yaml
 ```
 
 ### 5. Observe Scaling
@@ -180,17 +180,21 @@ Open http://localhost:15672 (login: `guest` / `guest`)
 
 ```
 .
-├── README.md                    # This file
-├── rabbitmq-deployment.yaml     # RabbitMQ Deployment + Service
-├── rabbitmq-secret.yaml         # AMQP connection string Secret (used by KEDA)
-├── consumer-deployment.yaml     # Consumer Deployment
-├── trigger-auth.yaml            # KEDA TriggerAuthentication
-├── scaled-object.yaml           # KEDA ScaledObject (scaling rules)
-├── publisher-job.yaml           # Kubernetes Job to generate load
-├── fake-orders-generator.py     # Publisher script (publishes fake orders to RabbitMQ)
-├── orders-consumer.py           # Consumer script (processes orders from RabbitMQ)
-├── Dockerfile.publisher         # Docker image for the publisher
-└── Dockerfile.consumer          # Docker image for the consumer
+├── README.md                        # This file
+├── k8s/                             # Kubernetes manifests
+│   ├── rabbitmq-deployment.yaml     # RabbitMQ Deployment + Service
+│   ├── rabbitmq-secret.yaml         # AMQP connection string Secret (used by KEDA)
+│   ├── consumer-deployment.yaml     # Consumer Deployment
+│   ├── trigger-auth.yaml            # KEDA TriggerAuthentication
+│   ├── scaled-object.yaml           # KEDA ScaledObject (scaling rules)
+│   └── publisher-job.yaml           # Kubernetes Job to generate load
+├── publisher/                       # Publisher app + image
+│   ├── fake-orders-generator.py     # Publishes fake orders to RabbitMQ
+│   └── Dockerfile                   # Docker image for the publisher
+├── consumer/                        # Consumer app + image
+│   ├── orders-consumer.py           # Processes orders from RabbitMQ
+│   └── Dockerfile                   # Docker image for the consumer
+└── Images/                          # Screenshots for docs
 ```
 
 ---
@@ -259,8 +263,8 @@ Desired replicas: ceil(50 / 5) = 10 (capped at maxReplicaCount=10)
 ### Build
 
 ```bash
-docker build -f Dockerfile.publisher -t <your-registry>/fake-orders-publisher:latest .
-docker build -f Dockerfile.consumer -t <your-registry>/fake-orders-consumer:latest .
+docker build -t <your-registry>/fake-orders-publisher:latest publisher/
+docker build -t <your-registry>/fake-orders-consumer:latest consumer/
 ```
 
 ### Push
@@ -291,12 +295,12 @@ Pre-built images available on Docker Hub:
 ## Clean Up
 
 ```bash
-kubectl delete -f publisher-job.yaml
-kubectl delete -f scaled-object.yaml
-kubectl delete -f trigger-auth.yaml
-kubectl delete -f consumer-deployment.yaml
-kubectl delete -f rabbitmq-secret.yaml
-kubectl delete -f rabbitmq-deployment.yaml
+kubectl delete -f k8s/publisher-job.yaml
+kubectl delete -f k8s/scaled-object.yaml
+kubectl delete -f k8s/trigger-auth.yaml
+kubectl delete -f k8s/consumer-deployment.yaml
+kubectl delete -f k8s/rabbitmq-secret.yaml
+kubectl delete -f k8s/rabbitmq-deployment.yaml
 helm uninstall keda -n keda
 kubectl delete namespace keda
 ```
